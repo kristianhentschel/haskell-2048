@@ -3,9 +3,21 @@ import Data.List
 import System.Random
 import Control.Monad.State
 
-data Tile = TEmpty | TNum Int deriving (Show, Read, Eq)
+data Tile = TEmpty | TNum Int deriving (Read, Eq)
 data Direction = MoveUp | MoveDown | MoveLeft | MoveRight deriving (Show, Read, Eq)
-data Grid = Grid Int [[Tile]] deriving (Show, Read, Eq)
+data Grid = Grid Int [[Tile]] deriving (Read, Eq)
+
+tile_width = 6
+
+instance Show Tile where
+    show TEmpty = " " ++ (take (tile_width-2) $ repeat '_') ++ " "
+    show (TNum num) = padl ++ strnum ++ padr
+        where   strnum = show num
+                padl = take (tile_width - length strnum - 1) $ repeat ' '
+                padr = " "
+
+instance Show Grid where
+    show (Grid _ tiles) = unlines $ map concat $ map (map show) tiles
 
 -- Apply the 2048 rules to a single list of tiles representing a row or column, moving towards the first element.
 moveList :: [Tile] -> [Tile]
@@ -72,7 +84,6 @@ addRandom grid rand1 rand2 =
 move :: Direction -> Grid -> Grid
 move dir grid = ((listsToGrid dir) . (map moveList) . (gridToLists dir)) grid
 
--- TODO so far assuming all player moves are valid.
 -- user io
 play :: Grid -> Bool -> StateT (StdGen) IO ()
 play grid valid = do
