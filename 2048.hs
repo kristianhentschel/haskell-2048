@@ -36,10 +36,19 @@ listsToGrid :: Direction -> [[Tile]] -> Grid
 listsToGrid dir tiles = Grid (length tiles) tiles'
     where tiles' = transposeTiles dir tiles
 
--- Create an empty grid for the start of the game
+-- Create an empty Grid for the start of the game
 emptyGrid :: Int -> Grid
 emptyGrid size = Grid size tiles
     where tiles = take size $ repeat $ take size $ repeat TEmpty
+
+-- Get coordinates of the empty grid positions
+getEmptyPositions :: Grid -> [(Int, Int)]
+getEmptyPositions (Grid size tiles) = 
+    let
+        flattiles = concat tiles
+        positions = concat $ map (\x -> zip (repeat x) [0..(size-1)]) [0..(size-1)]
+    in
+        [pos | (tile, pos) <- (zip flattiles positions), tile == TEmpty]
 
 -- replace a random empty tile in the grid with a 2 (90%) or 4 (10%) tile
 addRandom :: Grid -> Grid
