@@ -52,7 +52,18 @@ getEmptyPositions (Grid size tiles) =
 
 -- replace a random empty tile in the grid with a 2 (90%) or 4 (10%) tile
 addRandom :: Grid -> Grid
-addRandom grid = grid
+addRandom grid =
+    let
+        Grid size tiles = grid
+        randTile = TNum 2
+        randPos = head $ getEmptyPositions grid
+        tiles' = map (\(x, row) ->
+            map (\(y, t) ->
+                if (x,y) == randPos then randTile else t )
+                $ zip [0..size-1] row)
+            $ zip [0..size-1] tiles
+    in
+        Grid size tiles'
 
 -- Do the move, and if the grid changed, check if the game is lost or add a random new tile.
 move :: Direction -> Grid -> Grid
