@@ -74,30 +74,45 @@ move dir grid = ((listsToGrid dir) . (map moveList) . (gridToLists dir)) grid
 
 -- TODO so far assuming all player moves are valid.
 -- user io
-play :: Grid -> StateT (StdGen) IO ()
-play grid = do
+play :: Grid -> Bool -> StateT (StdGen) IO ()
+play grid valid = do
+
     gen <- get
     let (rand1, gen') = next gen
     let (rand2, gen'') = next gen'
+    let grid' = if valid then (addRandom grid rand1 rand2) else grid
     put gen''
-    let grid' = addRandom grid rand1 rand2
     
-    liftIO (putStrLn $ show grid)
-    c <- liftIO getChar
-    liftIO (putStrLn "")
+    liftIO (putStrLn $ show grid')
 
-    case c of
-        'w' -> play $ move MoveUp       grid'
-        's' -> play $ move MoveDown     grid'
-        'a' -> play $ move MoveLeft     grid'
-        'd' -> play $ move MoveRight    grid'
-        _   -> return()
+    if (hasValidMoves grid') then do
+        c <- liftIO getChar
+        liftIO (putStrLn "")
+
+        if (c `elem` "wasd") then do
+            let grid'' = (move (dir c) grid')
+            play grid'' (if grid' == grid'' then False else True)
+        else do
+            liftIO (putStrLn "Use your wasd keys to move the tiles. When two tiles with the same number touch, they merge into one!")
+            return ()
+    else do
+        liftIO (putStrLn "Game Over." )
+        return()
+    where
+        hasValidMoves g = [] /= filter (\dir -> move dir g /= g) [MoveUp, MoveDown, MoveLeft, MoveRight]
+        dir c = case c of
+                'w' -> MoveUp
+                's' -> MoveDown
+                'a' -> MoveLeft
+                'd' -> MoveRight
+                _   -> MoveRight
         
 -- main
 main :: IO ()
 main = do
-    putStrLn "=== 2048 ==="
-    runStateT (play (emptyGrid 4)) (mkStdGen 0)
+    putStrLn "Join the numbers and get to the 2048 tile!"
+    gen <- getStdGen
+    runStateT (play (emptyGrid 4) True) gen
     return ()
 
 -- some test cases for manual inspection in ghci. TODO port to HUnit or similar.
