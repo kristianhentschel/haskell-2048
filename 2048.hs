@@ -1,6 +1,7 @@
 module Main where
 import Data.List
 import System.Random
+import Control.Monad.State
 
 data Tile = TEmpty | TNum Int deriving (Show, Read, Eq)
 data Direction = MoveUp | MoveDown | MoveLeft | MoveRight deriving (Show, Read, Eq)
@@ -52,13 +53,14 @@ getEmptyPositions (Grid size tiles) =
         [pos | (tile, pos) <- (zip flattiles positions), tile == TEmpty]
 
 -- replace a random empty tile in the grid with a 2 (90%) or 4 (10%) tile
-addRandom :: Grid -> Grid
-addRandom grid =
+addRandom :: Grid -> Int -> Int -> Grid
+addRandom grid rand1 rand2 =
     let
         Grid size tiles = grid
-        randTile = TNum 2
-        randPos = head $ getEmptyPositions grid
-        tiles' = map (\(x, row) ->
+        randTile = TNum (if rand1 `mod` 100 <= 90 then 2 else 4)
+        empties  = getEmptyPositions grid
+        randPos  = empties !! (rand2 `mod` (length empties))
+        tiles'   = map (\(x, row) ->
             map (\(y, t) ->
                 if (x,y) == randPos then randTile else t )
                 $ zip [0..size-1] row)
@@ -66,20 +68,37 @@ addRandom grid =
     in
         Grid size tiles'
 
--- Do the move, and if the grid changed, check if the game is lost or add a random new tile.
+-- Apply a move in the given direction to the grid
 move :: Direction -> Grid -> Grid
-move dir grid = grid'
-    where grid' = ((listsToGrid dir) . (map moveList) . (gridToLists dir)) grid
+move dir grid = ((listsToGrid dir) . (map moveList) . (gridToLists dir)) grid
 
+-- TODO so far assuming all player moves are valid.
 -- user io
+play :: Grid -> StateT (StdGen) IO ()
+play grid = do
+    gen <- get
+    let (rand1, gen') = next gen
+    let (rand2, gen'') = next gen'
+    put gen''
+    let grid' = addRandom grid rand1 rand2
+    
+    liftIO (putStrLn $ show grid)
+    c <- liftIO getChar
+    liftIO (putStrLn "")
+
+    case c of
+        'w' -> play $ move MoveUp       grid'
+        's' -> play $ move MoveDown     grid'
+        'a' -> play $ move MoveLeft     grid'
+        'd' -> play $ move MoveRight    grid'
+        _   -> return()
+        
+-- main
 main :: IO ()
-main = return()
-
-
-
-
-
-
+main = do
+    putStrLn "=== 2048 ==="
+    runStateT (play (emptyGrid 4)) (mkStdGen 0)
+    return ()
 
 -- some test cases for manual inspection in ghci. TODO port to HUnit or similar.
 testMoveList :: ([Tile] -> [Tile]) -> [[Tile]]
