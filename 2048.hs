@@ -33,22 +33,24 @@ moveList (x:y:xs)       =
           TNum numx = x
 moveList (x:xs)         = (x:xs)
 
--- Transpose the Grid and reverse lists as required, so each row starts with the tile we are moving towards.
-transposeTiles :: Direction -> [[Tile]] -> [[Tile]]
-transposeTiles dir tiles = case dir of
-    MoveUp    -> transpose tiles
-    MoveDown  -> map reverse $ transpose tiles
-    MoveLeft  -> tiles
-    MoveRight -> map reverse tiles
-
 -- Convert the Grid into lists according to the move direction 
 gridToLists :: Direction -> Grid -> [[Tile]]
-gridToLists dir (Grid _ tiles) = transposeTiles dir tiles
+gridToLists dir (Grid _ tiles) =
+    case dir of
+        MoveUp    -> transpose tiles
+        MoveDown  -> map reverse $ transpose tiles
+        MoveLeft  -> tiles
+        MoveRight -> map reverse tiles
 
 -- Restore the original Grid
 listsToGrid :: Direction -> [[Tile]] -> Grid
 listsToGrid dir tiles = Grid (length tiles) tiles'
-    where tiles' = transposeTiles dir tiles
+    where tiles' = case dir of
+            MoveUp    -> transpose tiles
+            MoveDown  -> transpose $ map reverse tiles
+            MoveLeft  -> tiles
+            MoveRight -> map reverse tiles
+
 
 -- Create an empty Grid for the start of the game
 emptyGrid :: Int -> Grid
