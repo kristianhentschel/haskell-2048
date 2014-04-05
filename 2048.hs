@@ -1,5 +1,6 @@
 module Main where
 import Data.List
+import System.Random
 
 data Tile = TEmpty | TNum Int deriving (Show, Read, Eq)
 data Direction = MoveUp | MoveDown | MoveLeft | MoveRight deriving (Show, Read, Eq)
